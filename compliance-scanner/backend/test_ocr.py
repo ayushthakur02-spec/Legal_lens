@@ -1,4 +1,5 @@
 from paddleocr import PaddleOCR
+
 ocr = PaddleOCR(
     lang="en",
     use_doc_orientation_classify=False,
