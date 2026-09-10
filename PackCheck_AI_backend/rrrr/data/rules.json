@@ -1,0 +1,98 @@
+{
+  "version": "PackCheck-AI-2026-v1",
+  "description": "Engineering rule pack for preliminary screening. Verify current law, amendments and exemptions before real enforcement use.",
+  "rules": [
+    {
+      "id": "R01",
+      "field": "product_name",
+      "title": "Product / common name",
+      "required": true,
+      "categories": [
+        "*"
+      ]
+    },
+    {
+      "id": "R02",
+      "field": "manufacturer",
+      "title": "Manufacturer / packer / importer details",
+      "required": true,
+      "categories": [
+        "*"
+      ]
+    },
+    {
+      "id": "R03",
+      "field": "address",
+      "title": "Address",
+      "required": true,
+      "categories": [
+        "*"
+      ]
+    },
+    {
+      "id": "R04",
+      "field": "net_quantity",
+      "title": "Net quantity",
+      "required": true,
+      "categories": [
+        "*"
+      ]
+    },
+    {
+      "id": "R05",
+      "field": "mrp",
+      "title": "MRP",
+      "required": true,
+      "categories": [
+        "*"
+      ]
+    },
+    {
+      "id": "R06",
+      "field": "manufacture_or_pack_date",
+      "title": "Manufacture / packing date",
+      "required": true,
+      "categories": [
+        "*"
+      ]
+    },
+    {
+      "id": "R07",
+      "field": "consumer_care",
+      "title": "Consumer care details",
+      "required": true,
+      "categories": [
+        "*"
+      ]
+    },
+    {
+      "id": "R08",
+      "field": "country_of_origin",
+      "title": "Country of origin",
+      "required": true,
+      "categories": [
+        "*"
+      ],
+      "imported_only": true
+    },
+    {
+      "id": "R09",
+      "field": "unit_sale_price",
+      "title": "Unit sale price",
+      "required": false,
+      "categories": [
+        "*"
+      ]
+    },
+    {
+      "id": "R10",
+      "field": "best_before",
+      "title": "Best-before / use-by",
+      "required": false,
+      "categories": [
+        "food",
+        "cosmetic"
+      ]
+    }
+  ]
+}
