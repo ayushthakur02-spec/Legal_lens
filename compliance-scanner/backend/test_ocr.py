@@ -7,6 +7,7 @@ ocr = PaddleOCR(
     enable_mkldnn=False
 )
 
+
 image_path = input("Enter image path: ")
 
 result = ocr.predict(image_path)
