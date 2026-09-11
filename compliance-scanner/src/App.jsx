@@ -1,604 +1,351 @@
-import { useState } from "react";
-import OCRScanner from "./components/OCRScanner";
+import React, { useEffect, useState } from "react";
+import OCRScanner from "./assets/components/OCRScanner";
 import "./App.css";
 
-function App() {
-  const [page, setPage] = useState("dashboard");
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [analysis, setAnalysis] = useState(false);
-  const [compliance, setCompliance] = useState(false);
+const API_URL = "http://127.0.0.1:5000";
+
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+
+function Dashboard({ inspections, onScan }) {
+  const total = inspections.length;
+
+  const passed = inspections.filter(
+    (item) => item.overall_status === "PASS"
+  ).length;
+
+  const review = inspections.filter(
+    (item) => item.overall_status === "REVIEW"
+  ).length;
 
   return (
-    <div className="app">
+    <div className="dashboard-page">
 
-      {/* SIDEBAR */}
-      <aside className="sidebar">
-
-        <div className="logo">
-          <div className="logo-icon">🔷</div>
-
-          <div>
-            <strong>LegalScan</strong>
-            <small>Legal Metrology Compliance</small>
+      <section className="dashboard-hero">
+        <div className="hero-content">
+          <div className="hero-label">
+            AI-POWERED COMPLIANCE ASSISTANT
           </div>
+
+          <h1>
+            Packaged Commodity
+            <br />
+            Compliance Made Simple
+          </h1>
+
+          <p>
+            Scan product labels, extract important declarations,
+            and perform a preliminary Legal Metrology compliance check.
+          </p>
+
+          <button
+            className="upload-button"
+            onClick={onScan}
+          >
+            Scan Product
+          </button>
+        </div>
+      </section>
+
+
+      <section className="stats-grid">
+
+        <div className="stat-card">
+          <div className="feature-icon">📦</div>
+          <h2>{total}</h2>
+          <p>Total Inspections</p>
         </div>
 
-        <nav>
-
-          <div
-            className={`nav-item ${page === "dashboard" ? "active" : ""}`}
-            onClick={() => setPage("dashboard")}
-          >
-            🏠 Dashboard
-          </div>
-
-          <div
-            className={`nav-item ${page === "scan" ? "active" : ""}`}
-            onClick={() => setPage("scan")}
-          >
-            📷 Scan Product
-          </div>
-
-          <div className="nav-item">
-            🕘 History
-          </div>
-
-          <div className="nav-item">
-            📄 Reports
-          </div>
-
-          <div className="nav-item">
-            🔔 Notifications
-          </div>
-
-          <div className="nav-item">
-            👤 Profile
-          </div>
-
-        </nav>
-
-        <div className="logout">
-          ↪ Logout
+        <div className="stat-card">
+          <div className="feature-icon">✓</div>
+          <h2>{passed}</h2>
+          <p>Passed</p>
         </div>
 
-      </aside>
+        <div className="stat-card">
+          <div className="feature-icon">⚠</div>
+          <h2>{review}</h2>
+          <p>Needs Review</p>
+        </div>
+
+      </section>
 
 
-      {/* MAIN CONTENT */}
-      <div className="content">
+      <section className="feature-grid">
 
-        {/* TOP BAR */}
-        <header className="topbar">
+        <div className="feature-card">
+          <div className="feature-icon">📷</div>
+          <h3>Smart Scanning</h3>
+          <p>
+            Upload a product image and automatically analyze
+            the visible package declarations.
+          </p>
+        </div>
+
+        <div className="feature-card">
+          <div className="feature-icon">🔎</div>
+          <h3>OCR Extraction</h3>
+          <p>
+            Important label information can be converted into
+            structured product fields.
+          </p>
+        </div>
+
+        <div className="feature-card">
+          <div className="feature-icon">⚖</div>
+          <h3>Compliance Check</h3>
+          <p>
+            Check important declarations and identify
+            PASS, REVIEW or FAIL conditions.
+          </p>
+        </div>
+
+      </section>
+
+
+      <section className="recent-section">
+
+        <div className="section-title">
+          <h2>Recent Inspections</h2>
+        </div>
+
+        {inspections.length === 0 ? (
+
+          <p>No inspections yet. Scan a product to create one.</p>
+
+        ) : (
+
+          <div className="recent-table">
+
+            <div className="recent-row recent-head">
+              <span>Product</span>
+              <span>MRP</span>
+              <span>Status</span>
+              <span>Date</span>
+            </div>
+
+            {inspections.slice(0, 5).map((item) => (
+
+              <div
+                className="recent-row"
+                key={item.id}
+              >
+
+                <span>
+                  {item.product_name || "Unknown Product"}
+                </span>
+
+                <span>
+                  {item.mrp || "—"}
+                </span>
+
+                <span>
+                  {item.overall_status || "REVIEW"}
+                </span>
+
+                <span>
+                  {item.inspection_time || "—"}
+                </span>
+
+              </div>
+
+            ))}
+
+          </div>
+
+        )}
+
+      </section>
+
+
+      <div className="disclaimer">
+        <strong>Important:</strong> PackCheck AI is an
+        AI-assisted preliminary screening tool. It does not
+        replace inspection or certification by an authorised
+        Legal Metrology officer.
+      </div>
+
+    </div>
+  );
+}
+
+
+// ============================================================
+// RESULTS
+// ============================================================
+
+function Results({ result, onScan }) {
+
+  if (!result) {
+
+    return (
+      <div className="analysis-page">
+
+        <div className="analysis-card">
+
+          <h1>No Inspection Result</h1>
+
+          <p>
+            Scan a packaged commodity first to view its
+            compliance analysis.
+          </p>
+
+          <button
+            className="upload-button"
+            onClick={onScan}
+          >
+            Scan Product
+          </button>
+
+        </div>
+
+      </div>
+    );
+  }
+
+
+  const fields = result.fields || {};
+
+  const compliance = result.compliance || {};
+
+  const checks = compliance.checks || [];
+
+  const status =
+    compliance.overallStatus ||
+    "REVIEW";
+
+
+  return (
+    <div className="analysis-page">
+
+      <div className="analysis-card">
+
+        <div className="compliance-status">
+
+          <div className="status-icon">
+            {status === "PASS"
+              ? "✓"
+              : status === "FAIL"
+              ? "✕"
+              : "!"}
+          </div>
 
           <div>
-            <h2>
-              {page === "dashboard"
-                ? "Dashboard"
-                : "Scan Product"}
-            </h2>
+            <h1>
+              {status}
+            </h1>
 
             <p>
-              Legal Metrology Compliance System
+              Preliminary Compliance Result
             </p>
           </div>
 
-          <div className="user">
-            🔔
-            <div className="avatar">A</div>
-            <span>Team Alpha</span>
-            {compliance && (
-  <section className="analysis-page">
-    <button
-      className="back-button"
-      onClick={() => setCompliance(false)}
-    >
-      ← Back to Analysis
-    </button>
-
-    <div className="analysis-card">
-      <h1>Compliance Result</h1>
-      <p>Legal Metrology compliance assessment</p>
-
-      <div className="compliance-status">
-        <div className="status-icon">✓</div>
-        <div>
-          <h2>Compliant</h2>
-          <p>No major violations detected in this demo analysis.</p>
         </div>
-      </div>
-
-      <h2>Compliance Checklist</h2>
-      <div className="info-row">
-  <span>Manufacturer / Packer / Importer Details</span>
-  <strong>✓ Detected</strong>
-</div>
-
-<div className="info-row">
-  <span>Common / Generic Name</span>
-  <strong>✓ Detected</strong>
-</div>
-
-<div className="info-row">
-  <span>Net Quantity</span>
-  <strong>✓ Detected</strong>
-</div>
-
-<div className="info-row">
-  <span>Maximum Retail Price (MRP)</span>
-  <strong>✓ Detected</strong>
-</div>
-
-<div className="info-row">
-  <span>Country of Origin</span>
-  <strong>✓ Detected</strong>
-</div>
-
-<div className="info-row">
-  <span>Manufacturing / Packing Information</span>
-  <strong>✓ Detected</strong>
-</div>
-
-<div className="info-row">
-  <span>Best Before / Use By</span>
-  <strong>✓ Detected</strong>
-</div>
-
-<div className="info-row">
-  <span>Consumer Care Details</span>
-  <strong>✓ Detected</strong>
-</div>
-
-<div className="info-row">
-  <span>Unit Sale Price</span>
-  <strong>✓ Detected</strong>
-    </div>
-
-      <button
-        className="primary-button"
-        onClick={() => alert("Report generation will be added next.")}
-      >
-        📄 Generate Compliance Report
-      </button>
-    </div>
-   </section>
-  )}
-          </div>
-
-        </header>
 
 
-        {/* PAGE CONTENT */}
+        <h2>Extracted Product Information</h2>
 
-        {page === "dashboard" && (
+        <div className="fields-grid">
 
-          <main>
+          {Object.entries(fields)
+            .filter(
+              ([, value]) =>
+                value !== null &&
+                value !== undefined &&
+                String(value).trim() !== ""
+            )
+            .map(([key, value]) => (
 
-            <section className="hero">
+              <div
+                className="field-card"
+                key={key}
+              >
 
-              <div>
+                <strong>
+                  {formatFieldName(key)}
+                </strong>
 
-                <div className="eyebrow">
-                  AI-POWERED INSPECTION
-                </div>
-
-                <h1>
-                  Check Packaged Commodity
-                  <br />
-                  Compliance
-                </h1>
-
-                <p className="hero-text">
-                  Scan product labels and automatically
-                  verify required declarations under
-                  Legal Metrology rules.
-                </p>
-
-                <button
-                  className="primary-button"
-                  onClick={() => setPage("scan")}
-                >
-                  📷 Scan Product
-                </button>
-
-                <button className="secondary-button">
-                  ⓘ How It Works
-                </button>
+                <span>
+                  {value}
+                </span>
 
               </div>
 
-              <div className="hero-visual">
+            ))}
 
-                <div className="scan-corners"></div>
-
-                📦
-
-              </div>
-
-            </section>
+        </div>
 
 
-            {/* STATISTICS */}
+        <h2>Compliance Checks</h2>
 
-            <section className="stats">
+        <div className="checks-list">
 
-              <div className="stat-card">
-                <span>📦</span>
+          {checks.length === 0 ? (
+
+            <p>
+              No individual compliance checks available.
+            </p>
+
+          ) : (
+
+            checks.map((check, index) => (
+
+              <div
+                className="check-row"
+                key={index}
+              >
+
                 <div>
-                  <small>Total Scans</small>
-                  <strong>1,248</strong>
-                </div>
-              </div>
+                  <strong>
+                    {check.field || "Compliance Check"}
+                  </strong>
 
-              <div className="stat-card">
-                <span>✅</span>
-                <div>
-                  <small>Compliant</small>
-                  <strong>842</strong>
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <span>❌</span>
-                <div>
-                  <small>Non-Compliant</small>
-                  <strong>406</strong>
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <span>📊</span>
-                <div>
-                  <small>Compliance Rate</small>
-                  <strong>67.6%</strong>
-                </div>
-              </div>
-
-            </section>
-
-
-            {/* FEATURES */}
-
-            <h2 className="section-title">
-              Inspection Tools
-            </h2>
-
-            <section className="feature-grid">
-
-              <div className="feature-card">
-
-                <div className="feature-icon">
-                  📷
+                  <p>
+                    {check.message || ""}
+                  </p>
                 </div>
 
-                <h3>Instant Scan</h3>
-
-                <p>
-                  Scan product labels using
-                  camera or upload an image.
-                </p>
-
-                <button
-                  className="card-button"
-                  onClick={() => setPage("scan")}
-                >
-                  Start Scan →
-                </button>
+                <span className="check-status">
+                  {check.status || "REVIEW"}
+                </span>
 
               </div>
 
+            ))
 
-              <div className="feature-card">
+          )}
 
-                <div className="feature-icon">
-                  🤖
-                </div>
-
-                <h3>AI Analysis</h3>
-
-                <p>
-                  Extract product information
-                  from the package label.
-                </p>
-
-              </div>
+        </div>
 
 
-              <div className="feature-card">
+        {result.inspectionId && (
 
-                <div className="feature-icon">
-                  ✓
-                </div>
-
-                <h3>Compliance Check</h3>
-
-                <p>
-                  Check declarations against
-                  Legal Metrology requirements.
-                </p>
-
-              </div>
-
-
-              <div className="feature-card">
-
-                <div className="feature-icon">
-                  📄
-                </div>
-
-                <h3>Detailed Report</h3>
-
-                <p>
-                  Generate a report showing
-                  violations and recommendations.
-                </p>
-
-              </div>
-
-            </section>
-
-
-            {/* RECENT */}
-
-            <section className="recent">
-
-              <div className="section-header">
-
-                <h2>Recent Inspections</h2>
-
-                <button className="view-button">
-                  View All →
-                </button>
-
-              </div>
-
-              <div className="table">
-
-                <div className="table-row header-row">
-                  <span>Product</span>
-                  <span>Status</span>
-                  <span>Date</span>
-                </div>
-
-                <div className="table-row">
-                  <span>Sample Product</span>
-                  <span className="success">
-                    ✓ Compliant
-                  </span>
-                  <span>Today</span>
-                </div>
-
-              </div>
-
-            </section>
-
-          </main>
+          <p style={{ marginTop: "20px" }}>
+            <strong>Inspection ID:</strong>{" "}
+            #{result.inspectionId}
+          </p>
 
         )}
 
 
-        {/* SCAN PAGE */}
+        <div className="result-actions">
 
-        {page === "scan" && (
-
-          <main>
-
-            <button
-              className="back-button"
-              onClick={() => setPage("dashboard")}
-            >
-              ← Back to Dashboard
-            </button>
-
-            <section className="scan-page">
-
-              <div className="scan-header">
-
-                <h1>
-                  Upload or Capture Product Image
-                </h1>
-
-                <p>
-                  Upload a clear image of the product
-                  package or label to begin analysis.
-                </p>
-
-              </div>
-
-
-              <div className="scan-options">
-
-                <div className="scan-option active-option">
-                  📁 Upload Image
-                </div>
-
-                <div className="scan-option">
-                  📷 Capture Image
-                </div>
-
-              </div>
-
-
-              <div className="upload-box">
-            {!selectedImage ? (
-    <>
-      <div className="cloud-icon">
-        ☁️
-      </div>
-
-      <h2>
-        Drag & Drop Product Image
-      </h2>
-
-      <p>
-        or
-      </p>
-
-      <label className="browse-button">
-
-        Browse File
-
-        <input
-          type="file"
-          accept="image/*"
-          hidden
-          onChange={(event) => {
-            const file = event.target.files[0];
-
-            if (file) {
-              setSelectedImage(
-                URL.createObjectURL(file)
-              );
-            }
-          }}
-        />
-
-      </label>
-
-      <p className="file-info">
-        Supported formats: JPG, PNG, JPEG
-        (Maximum 10 MB)
-      </p>
-    </>
-  ) : (
-    <>
-      <h2>Product Image Preview</h2>
-
-      <img
-        src={selectedImage}
-        alt="Selected product"
-        className="product-preview"
-      />
-
-      <div className="preview-actions">
-
-        <button
-          className="secondary-button"
-          onClick={() => setSelectedImage(null)}
-        >
-          Choose Another
-        </button>
-
-        <button
-          className="primary-button"
-          onClick={() => setAnalysis("True")}
-        >
-          🤖 Analyze Image
-        </button>
-        
-        </div>
-        </>
-      )}
-   </div>
-
-      
-
-
-              <div className="tip-box">
-
-                💡 <strong>Tip:</strong> Make sure the
-                product label is clear and all required
-                information is visible.
-
-              </div>
-            <OCRScanner />
-            </section>
-
-          </main>
-
-        )}
-
-      {analysis && (
-  <section className="analysis-page">
-
-    <button
-      className="back-button"
-      onClick={() => setAnalysis(false)}
-    >
-      ← Back
-    </button>
-
-    <div className="analysis-card">
-
-      <h1>AI Analysis Results</h1>
-
-      <p>
-        Information extracted from the product label
-      </p>
-
-      <div className="analysis-layout">
-
-        <div className="image-section">
-
-          <img
-            src={selectedImage}
-            alt="Product"
-            className="analysis-image"
-          />
-
-          <div className="quality-box">
-            🟢 Image Quality: Good
-          </div>
+          <button
+            className="upload-button"
+            onClick={onScan}
+          >
+            Scan Another Product
+          </button>
 
         </div>
 
-        <div className="information-section">
 
-          <h2>Extracted Information</h2>
-
-          <div className="info-row">
-            <span>Product Name</span>
-            <strong>Potato Chips</strong>
-          </div>
-
-          <div className="info-row">
-            <span>Net Quantity</span>
-            <strong>50 g</strong>
-          </div>
-
-          <div className="info-row">
-            <span>MRP</span>
-            <strong>₹20</strong>
-          </div>
-
-          <div className="info-row">
-            <span>Batch No.</span>
-            <strong>B12345</strong>
-          </div>
-
-          <div className="info-row">
-            <span>Manufacturing Date</span>
-            <strong>01/05/2026</strong>
-          </div>
-
-          <div className="info-row">
-            <span>Use By</span>
-            <strong>30/10/2026</strong>
-          </div>
-
-          <div className="info-row">
-            <span>Manufacturer</span>
-            <strong>ABC Foods Pvt. Ltd.</strong>
-          </div>
-
-          <div className="info-row">
-            <span>FSSAI License</span>
-            <strong>10012022000123</strong>
-          </div>
-
+        <div className="disclaimer">
+          This result is an AI-assisted preliminary screening
+          and should be verified by an authorised inspector.
         </div>
-
-      </div>
-      <button
-      className="primary-button"
-      onClick={() => setCompliance(true)}
-      >
-      ✓ Check Compliance
-    </button>
-      
-     </div>
-
-    </section>
-  )}
 
       </div>
 
@@ -606,4 +353,323 @@ function App() {
   );
 }
 
-export default App
+
+// ============================================================
+// FIELD NAME FORMATTER
+// ============================================================
+
+function formatFieldName(key) {
+
+  const names = {
+    productName: "Product Name",
+    netQuantity: "Net Quantity",
+    mrp: "Maximum Retail Price",
+    batchNumber: "Batch / Lot Number",
+    packagingDate: "Date of Packaging",
+    useBy: "Use By / Best Before",
+    fssaiLicense: "FSSAI License",
+    countryOfOrigin: "Country of Origin",
+    manufacturer: "Manufacturer",
+    customerCare: "Consumer Care"
+  };
+
+  return (
+    names[key] ||
+    key
+      .replace(/([A-Z])/g, " $1")
+      .replace(/^./, (str) => str.toUpperCase())
+  );
+}
+
+
+// ============================================================
+// APP
+// ============================================================
+
+export default function App() {
+
+  const [page, setPage] = useState(
+    window.location.pathname === "/scan"
+      ? "scan"
+      : window.location.pathname === "/results"
+      ? "results"
+      : "dashboard"
+  );
+
+
+  const [result, setResult] = useState(() => {
+
+    try {
+
+      const saved =
+        localStorage.getItem("packcheck_result");
+
+      return saved
+        ? JSON.parse(saved)
+        : null;
+
+    } catch {
+
+      return null;
+
+    }
+
+  });
+
+
+  const [inspections, setInspections] = useState([]);
+
+
+  // ----------------------------------------------------------
+  // LOAD DATABASE HISTORY
+  // ----------------------------------------------------------
+
+  const loadInspections = async () => {
+
+    try {
+
+      const response =
+        await fetch(`${API_URL}/api/inspections`);
+
+      const data =
+        await response.json();
+
+      if (data.success) {
+
+        setInspections(
+          data.inspections || []
+        );
+
+      }
+
+    } catch (error) {
+
+      console.log(
+        "Unable to load inspection history."
+      );
+
+    }
+
+  };
+
+
+  useEffect(() => {
+
+    loadInspections();
+
+  }, []);
+
+
+  // ----------------------------------------------------------
+  // NAVIGATION
+  // ----------------------------------------------------------
+
+  const navigate = (target) => {
+
+    const path =
+      target === "dashboard"
+        ? "/"
+        : `/${target}`;
+
+    window.history.pushState(
+      {},
+      "",
+      path
+    );
+
+    setPage(target);
+
+    if (target === "dashboard") {
+      loadInspections();
+    }
+
+  };
+
+
+  // ----------------------------------------------------------
+  // HANDLE NEW RESULT
+  // ----------------------------------------------------------
+
+  const handleResult = (data) => {
+
+    setResult(data);
+
+    localStorage.setItem(
+      "packcheck_result",
+      JSON.stringify(data)
+    );
+
+    loadInspections();
+
+    navigate("results");
+
+  };
+
+
+  // ----------------------------------------------------------
+  // SIDEBAR
+  // ----------------------------------------------------------
+
+  return (
+
+    <div className="app">
+
+      <aside className="sidebar">
+
+        <div className="brand">
+
+          <div className="brand-icon">
+            ✓
+          </div>
+
+          <div>
+            <strong>
+              PackCheck AI
+            </strong>
+
+            <small>
+              Compliance Assistant
+            </small>
+          </div>
+
+        </div>
+
+
+        <nav className="sidebar-nav">
+
+          <button
+            className={
+              `nav-item ${
+                page === "dashboard"
+                  ? "active"
+                  : ""
+              }`
+            }
+            onClick={() =>
+              navigate("dashboard")
+            }
+          >
+            🏠
+            <span>
+              Dashboard
+            </span>
+          </button>
+
+
+          <button
+            className={
+              `nav-item ${
+                page === "scan"
+                  ? "active"
+                  : ""
+              }`
+            }
+            onClick={() =>
+              navigate("scan")
+            }
+          >
+            📷
+            <span>
+              Scan Product
+            </span>
+          </button>
+
+
+          <button
+            className={
+              `nav-item ${
+                page === "results"
+                  ? "active"
+                  : ""
+              }`
+            }
+            onClick={() =>
+              navigate("results")
+            }
+          >
+            📋
+            <span>
+              Results
+            </span>
+          </button>
+
+        </nav>
+
+
+        <div className="sidebar-bottom">
+
+          <div className="sidebar-info">
+            <strong>
+              SIH 2026 Prototype
+            </strong>
+
+            <span>
+              AI-assisted preliminary
+              compliance screening
+            </span>
+          </div>
+
+        </div>
+
+      </aside>
+
+
+      <main className="main-content">
+
+        <header className="topbar">
+
+          <div>
+            <strong>
+              PackCheck AI
+            </strong>
+          </div>
+
+          <div className="user-area">
+
+            <div className="user-icon">
+              👤
+            </div>
+
+          </div>
+
+        </header>
+
+
+        {page === "dashboard" && (
+
+          <Dashboard
+            inspections={inspections}
+            onScan={() =>
+              navigate("scan")
+            }
+          />
+
+        )}
+
+
+        {page === "scan" && (
+
+          <OCRScanner
+            onResult={handleResult}
+          />
+
+        )}
+
+
+        {page === "results" && (
+
+          <Results
+            result={result}
+            onScan={() =>
+              navigate("scan")
+            }
+          />
+
+        )}
+
+      </main>
+
+    </div>
+
+  );
+}

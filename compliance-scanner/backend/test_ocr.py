@@ -1,3 +1,7 @@
+import os
+
+os.environ["PADDLE_PDX_ENABLE_MKLDNN_BYDEFAULT"] = "0"
+os.environ["FLAGS_enable_pir_api"] = "0"
 from paddleocr import PaddleOCR
 
 ocr = PaddleOCR(
